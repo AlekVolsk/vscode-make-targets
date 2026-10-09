@@ -1,0 +1,99 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Make Targets configuration",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "$schema": {
+            "type": "string"
+        },
+        "makefile": {
+            "type": "string",
+            "description": "The Makefile, relative to the workspace folder. Default: GNUmakefile, makefile or Makefile in the folder."
+        },
+        "pathVariables": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+            },
+            "description": "Variables that take a file or folder path. A target takes a path when its recipe uses one of them; the first one in this list wins."
+        },
+        "pathFormat": {
+            "enum": [
+                "relative",
+                "absolute"
+            ],
+            "default": "relative",
+            "description": "\"relative\" passes ./path/from/the/Makefile/folder, \"absolute\" passes the full path."
+        },
+        "notifications": {
+            "enum": [
+                "always",
+                "failures",
+                "never"
+            ],
+            "default": "always",
+            "description": "When a finished run shows a notification: always, only when it failed, or never."
+        },
+        "hidden": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "Targets never shown or run from the editor. * and ? are wildcards."
+        },
+        "confirm": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "Targets that ask for confirmation before they run. * and ? are wildcards."
+        },
+        "targets": {
+            "type": "object",
+            "description": "Settings of single targets, by target name.",
+            "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "pathVariable": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+                        "description": "The variable this target takes a path in, overriding the detection; null: the target takes no path."
+                    },
+                    "hidden": {
+                        "type": "boolean",
+                        "description": "Hide the target, or show it although a pattern in \"hidden\" matches it."
+                    },
+                    "confirm": {
+                        "type": "boolean",
+                        "description": "Ask before the target runs, or do not although a pattern in \"confirm\" matches it."
+                    },
+                    "args": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "propertyNames": {
+                            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                        },
+                        "description": "Variables always passed to this target, as VAR=value."
+                    },
+                    "notifications": {
+                        "enum": [
+                            "always",
+                            "failures",
+                            "never"
+                        ],
+                        "description": "When a finished run of this target shows a notification, overriding \"notifications\"."
+                    }
+                }
+            }
+        }
+    }
+}

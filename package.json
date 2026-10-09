@@ -1,0 +1,413 @@
+{
+    "name": "make-targets",
+    "displayName": "Make Targets",
+    "description": "Make targets in the Explorer, run in the background on the file or folder under the cursor, with their output and history in the Make panel.",
+    "version": "1.0.0",
+    "publisher": "AlekVolsk",
+    "author": "AlekVolsk",
+    "license": "MIT",
+    "icon": "images/icon.png",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/AlekVolsk/vscode-make-targets.git"
+    },
+    "keywords": [
+        "make",
+        "makefile",
+        "targets",
+        "tasks"
+    ],
+    "engines": {
+        "vscode": "^1.94.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "extensionKind": [
+        "workspace"
+    ],
+    "main": "./out/extension.js",
+    "activationEvents": [
+        "workspaceContains:Makefile",
+        "workspaceContains:makefile",
+        "workspaceContains:GNUmakefile",
+        "workspaceContains:.vscode/make-targets.json",
+        "onView:makeTargets.targets",
+        "onView:makeTargets.runs"
+    ],
+    "scripts": {
+        "build": "npx --yes @vscode/vsce package --no-dependencies -o make-targets.vsix"
+    },
+    "contributes": {
+        "viewsContainers": {
+            "panel": [
+                {
+                    "id": "makeTargetsPanel",
+                    "title": "Make",
+                    "icon": "images/view-icon.svg"
+                }
+            ]
+        },
+        "views": {
+            "explorer": [
+                {
+                    "id": "makeTargets.targets",
+                    "name": "Make Targets",
+                    "icon": "images/view-icon.svg"
+                }
+            ],
+            "makeTargetsPanel": [
+                {
+                    "id": "makeTargets.runs",
+                    "name": "Runs",
+                    "icon": "images/view-icon.svg"
+                }
+            ]
+        },
+        "viewsWelcome": [
+            {
+                "view": "makeTargets.targets",
+                "contents": "No Makefile in the open folders."
+            },
+            {
+                "view": "makeTargets.runs",
+                "contents": "No runs yet. Run a target from the Make Targets view in the Explorer, or from the context menu of a file or folder."
+            }
+        ],
+        "commands": [
+            {
+                "command": "makeTargets.refresh",
+                "title": "Refresh",
+                "category": "Make",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "makeTargets.createConfig",
+                "title": "Create Config",
+                "category": "Make",
+                "icon": "$(new-file)"
+            },
+            {
+                "command": "makeTargets.openConfig",
+                "title": "Open Config",
+                "category": "Make",
+                "icon": "$(settings-gear)"
+            },
+            {
+                "command": "makeTargets.runTarget",
+                "title": "Run",
+                "category": "Make",
+                "icon": "$(play)"
+            },
+            {
+                "command": "makeTargets.stopTarget",
+                "title": "Stop",
+                "category": "Make",
+                "icon": "$(debug-stop)"
+            },
+            {
+                "command": "makeTargets.openInMakefile",
+                "title": "Open in Makefile",
+                "category": "Make",
+                "icon": "$(go-to-file)"
+            },
+            {
+                "command": "makeTargets.showLastRun",
+                "title": "Show Last Run",
+                "category": "Make"
+            },
+            {
+                "command": "makeTargets.runOnPath",
+                "title": "Run Make Target…",
+                "category": "Make",
+                "icon": "$(play)"
+            },
+            {
+                "command": "makeTargets.repeatOnPath",
+                "title": "Repeat Last Make Target",
+                "category": "Make",
+                "icon": "$(debug-rerun)"
+            },
+            {
+                "command": "makeTargets.stopRun",
+                "title": "Stop",
+                "category": "Make",
+                "icon": "$(debug-stop)"
+            },
+            {
+                "command": "makeTargets.rerun",
+                "title": "Run Again",
+                "category": "Make",
+                "icon": "$(debug-rerun)"
+            },
+            {
+                "command": "makeTargets.openRunOutput",
+                "title": "Open Output",
+                "category": "Make",
+                "icon": "$(go-to-file)"
+            },
+            {
+                "command": "makeTargets.copyRunOutput",
+                "title": "Copy Output",
+                "category": "Make",
+                "icon": "$(copy)"
+            },
+            {
+                "command": "makeTargets.removeRun",
+                "title": "Remove from History",
+                "category": "Make",
+                "icon": "$(close)"
+            },
+            {
+                "command": "makeTargets.clearRuns",
+                "title": "Clear Finished Runs",
+                "category": "Make",
+                "icon": "$(clear-all)"
+            },
+            {
+                "command": "makeTargets.openLocation",
+                "title": "Open Location",
+                "category": "Make"
+            }
+        ],
+        "menus": {
+            "view/title": [
+                {
+                    "command": "makeTargets.createConfig",
+                    "when": "view == makeTargets.targets && makeTargets.canCreateConfig",
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "makeTargets.openConfig",
+                    "when": "view == makeTargets.targets && makeTargets.hasConfig",
+                    "group": "navigation@2"
+                },
+                {
+                    "command": "makeTargets.refresh",
+                    "when": "view == makeTargets.targets",
+                    "group": "navigation@9"
+                },
+                {
+                    "command": "makeTargets.clearRuns",
+                    "when": "view == makeTargets.runs",
+                    "group": "navigation@1"
+                }
+            ],
+            "view/item/context": [
+                {
+                    "command": "makeTargets.runTarget",
+                    "when": "view == makeTargets.targets && viewItem =~ /^target\\./",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "makeTargets.stopTarget",
+                    "when": "view == makeTargets.targets && viewItem =~ /\\.running$/",
+                    "group": "inline@2"
+                },
+                {
+                    "command": "makeTargets.runTarget",
+                    "when": "view == makeTargets.targets && viewItem =~ /^target\\./",
+                    "group": "1_run@1"
+                },
+                {
+                    "command": "makeTargets.stopTarget",
+                    "when": "view == makeTargets.targets && viewItem =~ /\\.running$/",
+                    "group": "1_run@2"
+                },
+                {
+                    "command": "makeTargets.showLastRun",
+                    "when": "view == makeTargets.targets && viewItem =~ /^target\\./",
+                    "group": "2_show@1"
+                },
+                {
+                    "command": "makeTargets.openInMakefile",
+                    "when": "view == makeTargets.targets && viewItem =~ /^target\\./",
+                    "group": "2_show@2"
+                },
+                {
+                    "command": "makeTargets.stopRun",
+                    "when": "view == makeTargets.runs && viewItem == run.running",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "makeTargets.rerun",
+                    "when": "view == makeTargets.runs && viewItem =~ /^run\\.(passed|failed|stopped|interrupted)$/",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "makeTargets.openRunOutput",
+                    "when": "view == makeTargets.runs && viewItem =~ /^run\\./",
+                    "group": "inline@2"
+                },
+                {
+                    "command": "makeTargets.stopRun",
+                    "when": "view == makeTargets.runs && viewItem == run.running",
+                    "group": "1_run@1"
+                },
+                {
+                    "command": "makeTargets.rerun",
+                    "when": "view == makeTargets.runs && viewItem =~ /^run\\.(passed|failed|stopped|interrupted)$/",
+                    "group": "1_run@2"
+                },
+                {
+                    "command": "makeTargets.openRunOutput",
+                    "when": "view == makeTargets.runs && viewItem =~ /^run\\./",
+                    "group": "2_output@1"
+                },
+                {
+                    "command": "makeTargets.copyRunOutput",
+                    "when": "view == makeTargets.runs && viewItem =~ /^run\\./",
+                    "group": "2_output@2"
+                },
+                {
+                    "command": "makeTargets.removeRun",
+                    "when": "view == makeTargets.runs && viewItem =~ /^run\\.(passed|failed|stopped|interrupted)$/",
+                    "group": "3_remove@1"
+                }
+            ],
+            "explorer/context": [
+                {
+                    "command": "makeTargets.runOnPath",
+                    "when": "makeTargets.hasPathTargets && resourceScheme == file",
+                    "group": "makeTargets@1"
+                },
+                {
+                    "command": "makeTargets.repeatOnPath",
+                    "when": "makeTargets.hasPathTargets && resourceScheme == file",
+                    "group": "makeTargets@2"
+                }
+            ],
+            "editor/context": [
+                {
+                    "command": "makeTargets.runOnPath",
+                    "when": "makeTargets.hasPathTargets && resourceScheme == file",
+                    "group": "makeTargets@1"
+                },
+                {
+                    "command": "makeTargets.repeatOnPath",
+                    "when": "makeTargets.hasPathTargets && resourceScheme == file",
+                    "group": "makeTargets@2"
+                }
+            ],
+            "editor/title/context": [
+                {
+                    "command": "makeTargets.runOnPath",
+                    "when": "makeTargets.hasPathTargets && resourceScheme == file",
+                    "group": "makeTargets@1"
+                },
+                {
+                    "command": "makeTargets.repeatOnPath",
+                    "when": "makeTargets.hasPathTargets && resourceScheme == file",
+                    "group": "makeTargets@2"
+                }
+            ],
+            "commandPalette": [
+                {
+                    "command": "makeTargets.runTarget",
+                    "when": "false"
+                },
+                {
+                    "command": "makeTargets.stopTarget",
+                    "when": "false"
+                },
+                {
+                    "command": "makeTargets.openInMakefile",
+                    "when": "false"
+                },
+                {
+                    "command": "makeTargets.showLastRun",
+                    "when": "false"
+                },
+                {
+                    "command": "makeTargets.stopRun",
+                    "when": "false"
+                },
+                {
+                    "command": "makeTargets.rerun",
+                    "when": "false"
+                },
+                {
+                    "command": "makeTargets.openRunOutput",
+                    "when": "false"
+                },
+                {
+                    "command": "makeTargets.copyRunOutput",
+                    "when": "false"
+                },
+                {
+                    "command": "makeTargets.removeRun",
+                    "when": "false"
+                },
+                {
+                    "command": "makeTargets.openLocation",
+                    "when": "false"
+                },
+                {
+                    "command": "makeTargets.runOnPath",
+                    "when": "makeTargets.hasPathTargets && resourceScheme == file"
+                },
+                {
+                    "command": "makeTargets.repeatOnPath",
+                    "when": "makeTargets.hasPathTargets && resourceScheme == file"
+                }
+            ]
+        },
+        "configuration": {
+            "title": "Make Targets",
+            "properties": {
+                "makeTargets.makeCommand": {
+                    "type": "string",
+                    "default": "make",
+                    "scope": "machine-overridable",
+                    "markdownDescription": "The make executable. Targets are run as `<makeCommand> -C <Makefile folder> <target> [VAR=value…]`, without a shell around it."
+                }
+            }
+        },
+        "languages": [
+            {
+                "id": "jsonc",
+                "filenamePatterns": [
+                    "**/.vscode/make-targets.json"
+                ]
+            }
+        ],
+        "jsonValidation": [
+            {
+                "fileMatch": "**/.vscode/make-targets.json",
+                "url": "./schemas/make-targets.schema.json"
+            }
+        ],
+        "colors": [
+            {
+                "id": "makeTargets.pathTargetForeground",
+                "description": "Targets that take a path, in the Make Targets view.",
+                "defaults": {
+                    "dark": "charts.blue",
+                    "light": "charts.blue",
+                    "highContrast": "charts.blue",
+                    "highContrastLight": "charts.blue"
+                }
+            },
+            {
+                "id": "makeTargets.plainTargetForeground",
+                "description": "Targets that take no path, in the Make Targets view.",
+                "defaults": {
+                    "dark": "foreground",
+                    "light": "foreground",
+                    "highContrast": "foreground",
+                    "highContrastLight": "foreground"
+                }
+            },
+            {
+                "id": "makeTargets.errorOutputForeground",
+                "description": "Output lines written to stderr, in the Make panel.",
+                "defaults": {
+                    "dark": "errorForeground",
+                    "light": "errorForeground",
+                    "highContrast": "errorForeground",
+                    "highContrastLight": "errorForeground"
+                }
+            }
+        ]
+    }
+}
