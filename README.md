@@ -15,12 +15,12 @@ Or in VS Code: **Extensions** panel → `...` menu → **Install from VSIX…**.
 - Targets are grouped by the `##@Group Description` help comments of the Makefile, in Makefile order; targets without a group are under **Other**.
 - Targets that take a path have their own color.
 - A target shows when it last ran and how long it took, then its description from the Makefile, with a check or a cross for the outcome; a spinner while it runs. The time is kept across reloads and comes first, so a narrow panel cuts the description, not the time.
-- **Run** runs a target as it is, without a path. **Stop** stops every run of it. Clicking a target shows its latest run in the Make panel.
-- **Create Config** in the view title writes `.vscode/make-targets.json` when a folder has none; **Open Config** opens it.
+- **Run** runs a target as it is, without a path. **Stop** stops every run of it. **Copy name to clipboard** copies the target name. Clicking a target shows its latest run in the Make panel.
+- **Create config** in the view title writes `.vscode/make-targets.json` when a folder has none; **Open config** opens it.
 
 ## Running on a path
 
-**Run Make Target…** in the context menu of a file or folder, in the Explorer and in the editor, lists the targets that take a path, the recently used first. **Repeat Last Make Target** runs the last one picked in that folder again. The path is passed as the target's path variable, e.g. `make lint SRC=./src/app`.
+**Run make target…** in the context menu of a file or folder, in the Explorer and in the editor, lists the targets that take a path, the recently used first. **Repeat last make target** runs the last one picked in that folder again. The path is passed as the target's path variable, e.g. `make lint SRC=./src/app`.
 
 - Several selected paths run one after another, because a recipe usually quotes the variable (`"$(SRC)"`) and a list would not split.
 - A path outside the Makefile's folder, or one with `"`, `` ` ``, `$`, `\` or a line break in it, is refused: make expands the variable inside a bash recipe, where those characters would be interpreted.
@@ -28,9 +28,9 @@ Or in VS Code: **Extensions** panel → `...` menu → **Install from VSIX…**.
 
 ## Make panel
 
-A started run opens the Make panel and selects itself there. Every run is a node: the target, the path, when it started, how long it ran and, for a failure, the exit code. Under it are the last 2000 lines of its output, one line per item; stderr lines have their own color, and lines that point at a file (`path:line`, or a line number under PHP_CodeSniffer's `FILE:` header or ESLint's file line) open it. **Open Output** opens the whole output as a document. The last 20 runs are kept across reloads.
+A started run opens the Make panel and selects itself there. Every run is a node: the target, the path, when it started, how long it ran and, for a failure, the exit code. Under it are the last 2000 lines of its output, one line per item; stderr lines have their own color, and lines that point at a file (`path:line`, or a line number under PHP_CodeSniffer's `FILE:` header or ESLint's file line) open it. **Open output** opens the whole output as a document. The last 20 runs are kept across reloads.
 
-Runs are background processes, not terminals, so tools see no TTY. Output meant for a terminal is flattened: a progress bar redrawn in place with `\r` or cursor moves becomes its final line, colors are dropped. Targets that need a terminal (`docker exec -it`) fail; **Create Config** lists them under `hidden`.
+Runs are background processes, not terminals, so tools see no TTY. Output meant for a terminal is flattened: a progress bar redrawn in place with `\r` or cursor moves becomes its final line, colors are dropped. Targets that need a terminal (`docker exec -it`) fail; **Create config** lists them under `hidden`.
 
 ## Configuration: `.vscode/make-targets.json`
 

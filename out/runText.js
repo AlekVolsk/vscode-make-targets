@@ -7,6 +7,7 @@ const FILE_LINE = /(?:^|[\s'"(\[=])((?:\/|\.{1,2}\/)?[\w.@+-]+(?:\/[\w.@+-]+)*\.
 const FILE_HEADER = /^FILE:\s+(.+?)\s*$/;
 const ABSOLUTE_PATH_LINE = /^(\/\S+\.[A-Za-z0-9]+)$/;
 const ROW_WITH_LINE = /^\s*(\d+)(?::(\d+))?\s+(?:\|\s+)?(?:ERROR|WARNING|error|warning)\b/;
+const ABSOLUTE_PATH_IN_TEXT = /(?:^|[\s'"(\[=])(\/[\w.@+-]+(?:\/[\w.@+-]+)*\.[A-Za-z0-9]+)(?=$|[\s'")\],;])/;
 
 function pad(value) {
     return String(value).padStart(2, '0');
@@ -71,7 +72,8 @@ function displayCommand(makeCommand, args) {
 
 /**
  * Finds the file a line of output points at: `path:line[:column]` anywhere in the line, or a bare line number
- * under a file header, the way PHP_CodeSniffer (`FILE: …`) and ESLint (a path alone on its line) group reports.
+ * under a file header, the way PHP_CodeSniffer (`FILE: …`) and ESLint (a path alone on its line) group reports,
+ * or else an absolute file path anywhere in the line, opened at its start.
  */
 function createLocationTracker(baseDirectory) {
     let currentFile;
@@ -89,6 +91,10 @@ function createLocationTracker(baseDirectory) {
         const row = ROW_WITH_LINE.exec(text);
         if (row !== null && currentFile !== undefined) {
             return { file: currentFile, line: Number(row[1]), column: Number(row[2] ?? 1) };
+        }
+        const absolutePath = ABSOLUTE_PATH_IN_TEXT.exec(text);
+        if (absolutePath !== null) {
+            return { file: absolutePath[1], line: 1, column: 1 };
         }
         return undefined;
     };

@@ -88,7 +88,7 @@ class RunTreeProvider {
             item.iconPath = new vscode.ThemeIcon('go-to-file');
             item.command = {
                 command: 'makeTargets.openRunOutput',
-                title: 'Open Output',
+                title: 'Open output',
                 arguments: [this.#runNode(node.run)],
             };
             return item;

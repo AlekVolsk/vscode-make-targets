@@ -2,7 +2,7 @@
     "name": "make-targets",
     "displayName": "Make Targets",
     "description": "Make targets in the Explorer, run in the background on the file or folder under the cursor, with their output and history in the Make panel.",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "publisher": "AlekVolsk",
     "author": "AlekVolsk",
     "license": "MIT",
@@ -83,13 +83,13 @@
             },
             {
                 "command": "makeTargets.createConfig",
-                "title": "Create Config",
+                "title": "Create config",
                 "category": "Make",
                 "icon": "$(new-file)"
             },
             {
                 "command": "makeTargets.openConfig",
-                "title": "Open Config",
+                "title": "Open config",
                 "category": "Make",
                 "icon": "$(settings-gear)"
             },
@@ -113,18 +113,24 @@
             },
             {
                 "command": "makeTargets.showLastRun",
-                "title": "Show Last Run",
+                "title": "Show last run",
                 "category": "Make"
             },
             {
+                "command": "makeTargets.copyTargetName",
+                "title": "Copy name to clipboard",
+                "category": "Make",
+                "icon": "$(copy)"
+            },
+            {
                 "command": "makeTargets.runOnPath",
-                "title": "Run Make Target…",
+                "title": "Run make target…",
                 "category": "Make",
                 "icon": "$(play)"
             },
             {
                 "command": "makeTargets.repeatOnPath",
-                "title": "Repeat Last Make Target",
+                "title": "Repeat last make target",
                 "category": "Make",
                 "icon": "$(debug-rerun)"
             },
@@ -136,37 +142,37 @@
             },
             {
                 "command": "makeTargets.rerun",
-                "title": "Run Again",
+                "title": "Run again",
                 "category": "Make",
                 "icon": "$(debug-rerun)"
             },
             {
                 "command": "makeTargets.openRunOutput",
-                "title": "Open Output",
+                "title": "Open output",
                 "category": "Make",
                 "icon": "$(go-to-file)"
             },
             {
                 "command": "makeTargets.copyRunOutput",
-                "title": "Copy Output",
+                "title": "Copy output",
                 "category": "Make",
                 "icon": "$(copy)"
             },
             {
                 "command": "makeTargets.removeRun",
-                "title": "Remove from History",
+                "title": "Remove from history",
                 "category": "Make",
                 "icon": "$(close)"
             },
             {
                 "command": "makeTargets.clearRuns",
-                "title": "Clear Finished Runs",
+                "title": "Clear finished runs",
                 "category": "Make",
                 "icon": "$(clear-all)"
             },
             {
                 "command": "makeTargets.openLocation",
-                "title": "Open Location",
+                "title": "Open location",
                 "category": "Make"
             }
         ],
@@ -223,6 +229,11 @@
                     "command": "makeTargets.openInMakefile",
                     "when": "view == makeTargets.targets && viewItem =~ /^target\\./",
                     "group": "2_show@2"
+                },
+                {
+                    "command": "makeTargets.copyTargetName",
+                    "when": "view == makeTargets.targets && viewItem =~ /^target\\./",
+                    "group": "3_copy@1"
                 },
                 {
                     "command": "makeTargets.stopRun",
@@ -316,6 +327,10 @@
                 },
                 {
                     "command": "makeTargets.showLastRun",
+                    "when": "false"
+                },
+                {
+                    "command": "makeTargets.copyTargetName",
                     "when": "false"
                 },
                 {

@@ -86,9 +86,9 @@ class MakeRunner {
             const where = pathValue === undefined ? '' : ` on ${pathValue}`;
             const answer = await vscode.window.showWarningMessage(
                 `make ${target.name}${where} is already running since ${formatClock(active.startedAt)}.`,
-                'Show Output',
+                'Show output',
             );
-            if (answer === 'Show Output') {
+            if (answer === 'Show output') {
                 this.#onDidRequestReveal.fire(active);
             }
             return undefined;
@@ -282,10 +282,10 @@ class MakeRunner {
             ? `${what} finished in ${formatDuration(run.duration)}.`
             : `${what}: ${outcomeText(run)} after ${formatDuration(run.duration)}.`;
         const shown = run.state === 'passed'
-            ? vscode.window.showInformationMessage(message, 'Show Output')
-            : vscode.window.showErrorMessage(message, 'Show Output');
+            ? vscode.window.showInformationMessage(message, 'Show output')
+            : vscode.window.showErrorMessage(message, 'Show output');
         shown.then((answer) => {
-            if (answer === 'Show Output') {
+            if (answer === 'Show output') {
                 this.#onDidRequestReveal.fire(run);
             }
         });

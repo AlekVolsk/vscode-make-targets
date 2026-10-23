@@ -37,6 +37,7 @@ class MakeCommands {
             'makeTargets.stopTarget': (node) => this.#stopTarget(node),
             'makeTargets.openInMakefile': (node) => this.#openInMakefile(node),
             'makeTargets.showLastRun': (node) => this.#showLastRun(node),
+            'makeTargets.copyTargetName': (node) => this.#copyTargetName(node),
             'makeTargets.runOnPath': (uri, uris) => this.#runOnPaths(uri, uris, false),
             'makeTargets.repeatOnPath': (uri, uris) => this.#runOnPaths(uri, uris, true),
             'makeTargets.stopRun': (node) => this.#runner.stop(node.run),
@@ -133,7 +134,7 @@ class MakeCommands {
 
         const pathTargets = project.visibleTargets.filter((target) => target.pathVariable !== undefined);
         if (pathTargets.length === 0) {
-            const action = project.hasConfig ? 'Open Config' : 'Create Config';
+            const action = project.hasConfig ? 'Open config' : 'Create config';
             const answer = await vscode.window.showInformationMessage(
                 `No target of ${project.name} takes a path. List the path variables in .vscode/make-targets.json.`,
                 action,
@@ -223,6 +224,11 @@ class MakeCommands {
 
     async #openRunOutput(run) {
         await vscode.window.showTextDocument(vscode.Uri.file(run.logFile), { preview: true });
+    }
+
+    async #copyTargetName(node) {
+        await vscode.env.clipboard.writeText(node.target.name);
+        vscode.window.setStatusBarMessage(`Name of make ${node.target.name} copied`, 3_000);
     }
 
     async #copyRunOutput(run) {

@@ -113,7 +113,7 @@ class TargetTreeProvider {
         item.id = node.id;
         item.tooltip = node.message;
         item.iconPath = new vscode.ThemeIcon('warning', new vscode.ThemeColor('problemsWarningIcon.foreground'));
-        item.command = { command: 'makeTargets.openConfig', title: 'Open Config', arguments: [node.project] };
+        item.command = { command: 'makeTargets.openConfig', title: 'Open config', arguments: [node.project] };
         return item;
     }
 
@@ -139,7 +139,7 @@ class TargetTreeProvider {
         item.description = [runText, target.description].filter((part) => part !== '').join(' — ');
         item.tooltip = targetTooltip(target, lastRun, running);
         item.contextValue = `target.${kind}${running.length > 0 ? '.running' : ''}`;
-        item.command = { command: SHOW_LAST_RUN_COMMAND, title: 'Show Last Run', arguments: [node] };
+        item.command = { command: SHOW_LAST_RUN_COMMAND, title: 'Show last run', arguments: [node] };
         return item;
     }
 }
