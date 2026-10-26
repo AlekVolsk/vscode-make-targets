@@ -1,7 +1,18 @@
+// @ts-check
 'use strict';
 
 const INDENT = '    ';
 
+/**
+ * @typedef {import('./makefileParser').PathVariableCandidate} PathVariableCandidate
+ * @typedef {{ makefile: string, candidates: PathVariableCandidate[], terminalTargets: string[] }} InitialConfigInput
+ */
+
+/**
+ * @param {string[]} items
+ * @param {number} depth
+ * @returns {string}
+ */
 function jsonList(items, depth) {
     if (items.length === 0) {
         return '[]';
@@ -13,6 +24,9 @@ function jsonList(items, depth) {
 /**
  * The first configuration of a project. Targets whose recipe asks for a terminal go to "hidden", because
  * a background run has no TTY; path variables are left for the user to pick from the listed candidates.
+ *
+ * @param {InitialConfigInput} input
+ * @returns {string}
  */
 function buildInitialConfig({ makefile, candidates, terminalTargets }) {
     const candidateLine = candidates.length === 0
@@ -51,4 +65,4 @@ function buildInitialConfig({ makefile, candidates, terminalTargets }) {
     ].join('\n');
 }
 
-module.exports = { buildInitialConfig };
+module.exports.buildInitialConfig = buildInitialConfig;

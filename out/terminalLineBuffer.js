@@ -1,8 +1,16 @@
+// @ts-check
 'use strict';
 
 const ESC = '\x1b';
 const MAX_PENDING_LENGTH = 4_096;
 
+/**
+ * The index after the escape sequence that starts at `start`, or -1 while the sequence is incomplete.
+ *
+ * @param {string} input
+ * @param {number} start
+ * @returns {number}
+ */
 function escapeSequenceEnd(input, start) {
     const kind = input[start + 1];
     if (kind === undefined) {
@@ -39,14 +47,20 @@ function escapeSequenceEnd(input, start) {
  * the current line, erase-line clears it, colors and every other escape sequence are dropped.
  */
 class TerminalLineBuffer {
+    /** @type {string[]} */
     #cells = [];
     #cursor = 0;
     #pending = '';
 
+    /** @returns {string} */
     get currentLine() {
         return this.#render();
     }
 
+    /**
+     * @param {string} text
+     * @returns {string[]} the lines finished by this chunk
+     */
     write(text) {
         const input = this.#pending + text;
         this.#pending = '';
@@ -80,11 +94,13 @@ class TerminalLineBuffer {
         return lines;
     }
 
+    /** @returns {string | undefined} */
     flush() {
         this.#pending = '';
         return this.#cells.length === 0 ? undefined : this.#takeLine();
     }
 
+    /** @param {string} sequence */
     #applyEscape(sequence) {
         if (sequence[1] !== '[') {
             return;
@@ -109,10 +125,12 @@ class TerminalLineBuffer {
         }
     }
 
+    /** @returns {string} */
     #render() {
         return Array.from({ length: this.#cells.length }, (_, index) => this.#cells[index] ?? ' ').join('').trimEnd();
     }
 
+    /** @returns {string} */
     #takeLine() {
         const line = this.#render();
         this.#cells = [];
@@ -121,4 +139,4 @@ class TerminalLineBuffer {
     }
 }
 
-module.exports = { TerminalLineBuffer };
+module.exports.TerminalLineBuffer = TerminalLineBuffer;

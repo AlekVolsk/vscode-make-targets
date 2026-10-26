@@ -2,10 +2,10 @@
     "name": "make-targets",
     "displayName": "Make Targets",
     "description": "Make targets in the Explorer, run in the background on the file or folder under the cursor, with their output and history in the Make panel.",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "publisher": "AlekVolsk",
     "author": "AlekVolsk",
-    "license": "MIT",
+    "license": "BSD-3-Clause",
     "icon": "images/icon.png",
     "repository": {
         "type": "git",
@@ -31,12 +31,11 @@
         "workspaceContains:Makefile",
         "workspaceContains:makefile",
         "workspaceContains:GNUmakefile",
-        "workspaceContains:.vscode/make-targets.json",
-        "onView:makeTargets.targets",
-        "onView:makeTargets.runs"
+        "workspaceContains:.vscode/make-targets.json"
     ],
     "scripts": {
-        "build": "npx --yes @vscode/vsce package --no-dependencies -o make-targets.vsix"
+        "build": "npx --yes @vscode/vsce package --no-dependencies -o make-targets.vsix",
+        "check": "tsc -p out/jsconfig.json"
     },
     "contributes": {
         "viewsContainers": {
@@ -424,5 +423,10 @@
                 }
             }
         ]
+    },
+    "devDependencies": {
+        "@types/node": "^20.19.43",
+        "@types/vscode": "1.94.0",
+        "typescript": "^7.0.2"
     }
 }

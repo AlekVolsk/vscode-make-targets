@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const path = require('path');
@@ -9,16 +10,48 @@ const UNGROUPED = 'Other';
 const SHOW_LAST_RUN_COMMAND = 'makeTargets.showLastRun';
 
 /**
+ * @typedef {import('./makeProject').MakeProject} MakeProject
+ * @typedef {import('./makeProject').MakeTarget} MakeTarget
+ * @typedef {import('./makeRun').MakeRun} MakeRun
+ * @typedef {import('./makeRunner').MakeRunner} MakeRunner
+ * @typedef {import('./makeWorkspace').MakeWorkspace} MakeWorkspace
+ * @typedef {import('./runHistory').LastRun} LastRun
+ * @typedef {import('./makeDecorationProvider').DecorationKind} DecorationKind
+ * @typedef {{ type: 'project', project: MakeProject }} ProjectFields
+ * @typedef {{ type: 'problem', project: MakeProject, message: string }} ProblemFields
+ * @typedef {{ type: 'group', project: MakeProject, name: string }} GroupFields
+ * @typedef {{ type: 'target', project: MakeProject, target: MakeTarget }} TargetFields
+ * @typedef {ProjectFields | ProblemFields | GroupFields | TargetFields} NodeFields
+ * @typedef {ProjectFields & { id: string }} ProjectNode
+ * @typedef {ProblemFields & { id: string }} ProblemNode
+ * @typedef {GroupFields & { id: string }} GroupNode
+ * @typedef {TargetFields & { id: string }} TargetNode
+ * @typedef {ProjectNode | ProblemNode | GroupNode | TargetNode} TargetTreeNode
+ * @typedef {import('vscode').TreeDataProvider<TargetTreeNode>} TargetTreeDataProvider
+ */
+
+/**
  * Make Targets view: per project (when several folders have one) the problems first, then the targets
  * grouped by their `##@Group` help comment, in Makefile order.
+ *
+ * @implements {TargetTreeDataProvider}
  */
 class TargetTreeProvider {
+    /** @type {MakeWorkspace} */
     #workspace;
+    /** @type {MakeRunner} */
     #runner;
+    /** @type {Map<string, TargetTreeNode>} by node id */
     #nodes = new Map();
+    /** @type {import('vscode').EventEmitter<TargetTreeNode | undefined>} */
     #onDidChangeTreeData = new vscode.EventEmitter();
+    /** @type {import('vscode').Disposable[]} */
     #subscriptions = [];
 
+    /**
+     * @param {MakeWorkspace} workspace
+     * @param {MakeRunner} runner
+     */
     constructor(workspace, runner) {
         this.#workspace = workspace;
         this.#runner = runner;
@@ -26,10 +59,15 @@ class TargetTreeProvider {
         this.#subscriptions.push(workspace.onDidChange(refresh), runner.onDidChangeRuns(refresh));
     }
 
+    /** @returns {import('vscode').Event<TargetTreeNode | undefined>} */
     get onDidChangeTreeData() {
         return this.#onDidChangeTreeData.event;
     }
 
+    /**
+     * @param {TargetTreeNode} [node]
+     * @returns {TargetTreeNode[]}
+     */
     getChildren(node) {
         if (node === undefined) {
             const projects = this.#workspace.projects;
@@ -49,6 +87,10 @@ class TargetTreeProvider {
         return [];
     }
 
+    /**
+     * @param {TargetTreeNode} node
+     * @returns {import('vscode').TreeItem}
+     */
     getTreeItem(node) {
         switch (node.type) {
             case 'project':
@@ -69,6 +111,10 @@ class TargetTreeProvider {
         this.#onDidChangeTreeData.dispose();
     }
 
+    /**
+     * @param {MakeProject} project
+     * @returns {TargetTreeNode[]}
+     */
     #projectChildren(project) {
         const problems = project.problems.map((message, index) => this.#node(
             `problem:${project.rootPath}:${index}`,
@@ -85,17 +131,32 @@ class TargetTreeProvider {
         ];
     }
 
+    /**
+     * The node with this id, the same object on every call, updated with the fields.
+     *
+     * @param {string} id
+     * @param {NodeFields} fields
+     * @returns {TargetTreeNode}
+     */
     #node(id, fields) {
-        const node = this.#nodes.get(id) ?? { id };
-        Object.assign(node, fields);
+        const node = Object.assign(this.#nodes.get(id) ?? { id }, fields);
         this.#nodes.set(id, node);
         return node;
     }
 
+    /**
+     * @param {MakeProject} project
+     * @param {MakeTarget} target
+     * @returns {TargetTreeNode}
+     */
     #targetNode(project, target) {
         return this.#node(`target:${project.rootPath}:${target.name}`, { type: 'target', project, target });
     }
 
+    /**
+     * @param {ProjectNode} node
+     * @returns {import('vscode').TreeItem}
+     */
     #projectItem(node) {
         const item = new vscode.TreeItem(node.project.name, vscode.TreeItemCollapsibleState.Expanded);
         item.id = node.id;
@@ -108,6 +169,10 @@ class TargetTreeProvider {
         return item;
     }
 
+    /**
+     * @param {ProblemNode} node
+     * @returns {import('vscode').TreeItem}
+     */
     #problemItem(node) {
         const item = new vscode.TreeItem(node.message, vscode.TreeItemCollapsibleState.None);
         item.id = node.id;
@@ -117,6 +182,10 @@ class TargetTreeProvider {
         return item;
     }
 
+    /**
+     * @param {GroupNode} node
+     * @returns {import('vscode').TreeItem}
+     */
     #groupItem(node) {
         const item = new vscode.TreeItem(node.name, vscode.TreeItemCollapsibleState.Expanded);
         item.id = node.id;
@@ -126,6 +195,10 @@ class TargetTreeProvider {
         return item;
     }
 
+    /**
+     * @param {TargetNode} node
+     * @returns {import('vscode').TreeItem}
+     */
     #targetItem(node) {
         const { project, target } = node;
         const kind = target.pathVariable === undefined ? 'plainTarget' : 'pathTarget';
@@ -144,6 +217,12 @@ class TargetTreeProvider {
     }
 }
 
+/**
+ * @param {DecorationKind} kind
+ * @param {boolean} isRunning
+ * @param {LastRun | undefined} lastRun
+ * @returns {import('vscode').ThemeIcon}
+ */
 function targetIcon(kind, isRunning, lastRun) {
     if (isRunning) {
         return new vscode.ThemeIcon('loading~spin');
@@ -154,13 +233,22 @@ function targetIcon(kind, isRunning, lastRun) {
     if (lastRun !== undefined && lastRun.state !== 'stopped') {
         return new vscode.ThemeIcon('error', new vscode.ThemeColor('testing.iconFailed'));
     }
-    return new vscode.ThemeIcon('symbol-event', new vscode.ThemeColor(MakeDecorationProvider.colorIdFor(kind)));
+    const colorId = MakeDecorationProvider.colorIdFor(kind);
+    return new vscode.ThemeIcon('symbol-event', colorId === undefined ? undefined : new vscode.ThemeColor(colorId));
 }
 
+/**
+ * @param {MakeRun[]} running
+ * @returns {string}
+ */
 function runningText(running) {
     return running.length === 1 ? `running since ${formatClock(running[0].startedAt)}` : `${running.length} running`;
 }
 
+/**
+ * @param {LastRun | undefined} lastRun
+ * @returns {string}
+ */
 function lastRunText(lastRun) {
     if (lastRun === undefined) {
         return '';
@@ -172,6 +260,12 @@ function lastRunText(lastRun) {
     return `${formatClock(lastRun.startedAt)}${duration}`;
 }
 
+/**
+ * @param {MakeTarget} target
+ * @param {LastRun | undefined} lastRun
+ * @param {MakeRun[]} running
+ * @returns {import('vscode').MarkdownString}
+ */
 function targetTooltip(target, lastRun, running) {
     const tooltip = new vscode.MarkdownString();
     tooltip.appendMarkdown('**');
@@ -211,4 +305,4 @@ function targetTooltip(target, lastRun, running) {
     return tooltip;
 }
 
-module.exports = { TargetTreeProvider };
+module.exports.TargetTreeProvider = TargetTreeProvider;

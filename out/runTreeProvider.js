@@ -1,9 +1,23 @@
+// @ts-check
 'use strict';
 
 const vscode = require('vscode');
 const { MakeDecorationProvider } = require('./makeDecorationProvider');
 const { formatClock, formatDuration } = require('./runText');
 
+/**
+ * @typedef {import('./makeRun').MakeRun} MakeRun
+ * @typedef {import('./makeRun').OutputLine} OutputLine
+ * @typedef {import('./makeRun').RunState} RunState
+ * @typedef {import('./makeRunner').MakeRunner} MakeRunner
+ * @typedef {{ type: 'run', id: string, run: MakeRun }} RunNode
+ * @typedef {{ type: 'earlier', id: string, run: MakeRun, count: number }} EarlierNode
+ * @typedef {{ type: 'line', id: string, run: MakeRun, line: OutputLine, isLive?: boolean }} LineNode
+ * @typedef {RunNode | EarlierNode | LineNode} RunTreeNode
+ * @typedef {import('vscode').TreeDataProvider<RunTreeNode>} RunTreeDataProvider
+ */
+
+/** @type {Readonly<Record<RunState, readonly [icon: string, color: string | undefined]>>} */
 const STATE_ICONS = Object.freeze({
     running: ['loading~spin', undefined],
     passed: ['pass', 'testing.iconPassed'],
@@ -15,13 +29,20 @@ const STATE_ICONS = Object.freeze({
 /**
  * Runs view in the Make panel: the runs, newest first, and under each the tail of its output, one line per
  * item; lines that point at a file open it.
+ *
+ * @implements {RunTreeDataProvider}
  */
 class RunTreeProvider {
+    /** @type {MakeRunner} */
     #runner;
+    /** @type {Map<string, RunNode>} by run id */
     #runNodes = new Map();
+    /** @type {import('vscode').EventEmitter<RunTreeNode | undefined>} */
     #onDidChangeTreeData = new vscode.EventEmitter();
+    /** @type {import('vscode').Disposable[]} */
     #subscriptions = [];
 
+    /** @param {MakeRunner} runner */
     constructor(runner) {
         this.#runner = runner;
         this.#subscriptions.push(
@@ -35,14 +56,23 @@ class RunTreeProvider {
         );
     }
 
+    /** @returns {import('vscode').Event<RunTreeNode | undefined>} */
     get onDidChangeTreeData() {
         return this.#onDidChangeTreeData.event;
     }
 
+    /**
+     * @param {MakeRun} run
+     * @returns {RunNode}
+     */
     runNodeOf(run) {
         return this.#runNode(run);
     }
 
+    /**
+     * @param {RunTreeNode} [node]
+     * @returns {Promise<RunTreeNode[]>}
+     */
     async getChildren(node) {
         if (node === undefined) {
             const runs = this.#runner.runs;
@@ -60,6 +90,7 @@ class RunTreeProvider {
         await this.#runner.loadLines(run);
         const visible = run.visibleLines;
         const firstIndex = run.lineCount - visible.length;
+        /** @type {RunTreeNode[]} */
         const children = [];
         if (firstIndex > 0) {
             children.push({ type: 'earlier', id: `${run.id}:earlier`, run, count: firstIndex });
@@ -74,10 +105,18 @@ class RunTreeProvider {
         return children;
     }
 
+    /**
+     * @param {RunTreeNode} node
+     * @returns {RunNode | undefined}
+     */
     getParent(node) {
         return node.type === 'run' ? undefined : this.#runNode(node.run);
     }
 
+    /**
+     * @param {RunTreeNode} node
+     * @returns {import('vscode').TreeItem}
+     */
     getTreeItem(node) {
         if (node.type === 'run') {
             return this.#runItem(node.run);
@@ -103,6 +142,10 @@ class RunTreeProvider {
         this.#onDidChangeTreeData.dispose();
     }
 
+    /**
+     * @param {MakeRun} run
+     * @returns {RunNode}
+     */
     #runNode(run) {
         let node = this.#runNodes.get(run.id);
         if (node === undefined) {
@@ -112,6 +155,10 @@ class RunTreeProvider {
         return node;
     }
 
+    /**
+     * @param {MakeRun} run
+     * @returns {import('vscode').TreeItem}
+     */
     #runItem(run) {
         const state = run.isRunning
             ? vscode.TreeItemCollapsibleState.Expanded
@@ -139,6 +186,10 @@ class RunTreeProvider {
     }
 }
 
+/**
+ * @param {LineNode} node
+ * @returns {import('vscode').TreeItem}
+ */
 function lineItem(node) {
     const { line } = node;
     const item = new vscode.TreeItem(line.text === '' ? ' ' : line.text);
@@ -157,4 +208,4 @@ function lineItem(node) {
     return item;
 }
 
-module.exports = { RunTreeProvider };
+module.exports.RunTreeProvider = RunTreeProvider;

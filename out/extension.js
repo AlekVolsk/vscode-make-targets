@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.activate = activate;
@@ -18,30 +19,36 @@ const TARGETS_VIEW_ID = 'makeTargets.targets';
 const RUNS_VIEW_ID = 'makeTargets.runs';
 const MAKE_DIRECTORY_IN_HEADER = /^\$ \S+ (?:--no-print-directory )?-C (\S+|'[^']*')/;
 
+/** @type {MakeRunner | undefined} the runner of the active extension, stopped on deactivation */
 let runner;
 
+/**
+ * @param {import('vscode').ExtensionContext} context
+ * @returns {Promise<void>}
+ */
 async function activate(context) {
     const log = vscode.window.createOutputChannel('Make Targets', { log: true });
     const storage = context.storageUri ?? context.globalStorageUri;
     const history = new RunHistory(context.workspaceState, path.join(storage.fsPath, 'runs'));
     const workspace = new MakeWorkspace(log);
-    runner = new MakeRunner(history, log);
+    const makeRunner = new MakeRunner(history, log);
+    runner = makeRunner;
 
-    const targetTree = new TargetTreeProvider(workspace, runner);
-    const runTree = new RunTreeProvider(runner);
+    const targetTree = new TargetTreeProvider(workspace, makeRunner);
+    const runTree = new RunTreeProvider(makeRunner);
     const targetView = vscode.window.createTreeView(TARGETS_VIEW_ID, {
         treeDataProvider: targetTree,
         showCollapseAll: true,
     });
     const runView = vscode.window.createTreeView(RUNS_VIEW_ID, { treeDataProvider: runTree, showCollapseAll: true });
-    const commands = new MakeCommands({ workspace, runner, history, runTree, runView, log });
+    const commands = new MakeCommands({ workspace, runner: makeRunner, history, runTree, runView, log });
 
     const status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 20);
     status.command = `${RUNS_VIEW_ID}.focus`;
     const updateStatus = () => {
-        const count = runner.runningCount;
+        const count = makeRunner.runningCount;
         status.text = `$(sync~spin) make ×${count}`;
-        status.tooltip = runner.runs.filter((run) => run.isRunning)
+        status.tooltip = makeRunner.runs.filter((run) => run.isRunning)
             .map((run) => `make ${run.target}${run.pathValue === undefined ? '' : ` ${run.pathValue}`}`).join('\n');
         if (count > 0) {
             status.show();
@@ -62,15 +69,22 @@ async function activate(context) {
         vscode.window.registerFileDecorationProvider(new MakeDecorationProvider()),
         vscode.languages.registerDocumentLinkProvider(
             { scheme: 'file', pattern: new vscode.RelativePattern(vscode.Uri.file(history.logDirectory), '*.log') },
-            { provideDocumentLinks: (document) => logLinks(document, runner) },
+            { provideDocumentLinks: (document) => logLinks(document, makeRunner) },
         ),
-        runner.onDidChangeRuns(updateStatus),
+        makeRunner.onDidChangeRuns(updateStatus),
         vscode.workspace.onDidChangeWorkspaceFolders(() => workspace.syncFolders()),
     );
     updateStatus();
     await workspace.syncFolders();
 }
 
+/**
+ * Links from the lines of a run's log file to the files they point at.
+ *
+ * @param {import('vscode').TextDocument} document
+ * @param {MakeRunner} makeRunner
+ * @returns {import('vscode').DocumentLink[]}
+ */
 function logLinks(document, makeRunner) {
     const run = makeRunner.runs.find((candidate) => candidate.logFile === document.uri.fsPath);
     const header = MAKE_DIRECTORY_IN_HEADER.exec(document.lineAt(0).text);
@@ -92,6 +106,7 @@ function logLinks(document, makeRunner) {
     return links;
 }
 
+/** @returns {void} */
 function deactivate() {
     runner?.dispose();
 }

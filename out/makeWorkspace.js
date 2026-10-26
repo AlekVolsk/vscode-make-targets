@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const path = require('path');
@@ -13,30 +14,42 @@ const FOLDER_WATCHED_FILES = Object.freeze([
 ]);
 const FOLDER_WATCH_PATTERN = '{GNUmakefile,makefile,Makefile,.vscode/make-targets.json}';
 
+/** @typedef {import('vscode').FileSystemWatcher} FileSystemWatcher */
+
 /**
  * The make projects of the open workspace folders. Reloads a project when its config, its Makefile or an
  * included file changes, and keeps the context keys of the view title buttons in step.
  */
 class MakeWorkspace {
+    /** @type {import('vscode').LogOutputChannel} */
     #log;
+    /** @type {Map<string, MakeProject>} by workspace folder URI */
     #projects = new Map();
+    /** @type {Map<string, FileSystemWatcher>} by workspace folder URI */
     #folderWatchers = new Map();
+    /** @type {Map<string, FileSystemWatcher[]>} by workspace folder URI */
     #fileWatchers = new Map();
+    /** @type {Map<MakeProject, NodeJS.Timeout>} */
     #reloadTimers = new Map();
+    /** @type {import('vscode').EventEmitter<void>} */
     #onDidChange = new vscode.EventEmitter();
 
+    /** @param {import('vscode').LogOutputChannel} log */
     constructor(log) {
         this.#log = log;
     }
 
+    /** @returns {import('vscode').Event<void>} */
     get onDidChange() {
         return this.#onDidChange.event;
     }
 
+    /** @returns {MakeProject[]} the projects that have a Makefile or a config */
     get projects() {
         return [...this.#projects.values()].filter((project) => project.isRelevant);
     }
 
+    /** @returns {Promise<void>} */
     async syncFolders() {
         const folders = vscode.workspace.workspaceFolders ?? [];
         const folderKeys = new Set(folders.map((folder) => folder.uri.toString()));
@@ -64,11 +77,16 @@ class MakeWorkspace {
         this.#publish();
     }
 
+    /** @returns {Promise<void>} */
     async reloadAll() {
         await Promise.all([...this.#projects.values()].map((project) => this.#load(project)));
         this.#publish();
     }
 
+    /**
+     * @param {MakeProject} project
+     * @returns {Promise<void>}
+     */
     async reload(project) {
         await this.#load(project);
         this.#publish();
@@ -81,11 +99,15 @@ class MakeWorkspace {
         this.#onDidChange.dispose();
     }
 
+    /**
+     * @param {MakeProject} project
+     * @returns {Promise<void>}
+     */
     async #load(project) {
         try {
             await project.load();
         } catch (error) {
-            this.#log.error(`Loading ${project.rootPath}: ${error.message}`);
+            this.#log.error(`Loading ${project.rootPath}: ${/** @type {Error} */ (error).message}`);
         }
         this.#watchFiles(project);
         for (const problem of project.problems) {
@@ -93,6 +115,7 @@ class MakeWorkspace {
         }
     }
 
+    /** @param {MakeProject} project */
     #watchFiles(project) {
         const key = project.folder.uri.toString();
         for (const watcher of this.#fileWatchers.get(key) ?? []) {
@@ -116,6 +139,7 @@ class MakeWorkspace {
         this.#fileWatchers.set(key, watchers);
     }
 
+    /** @param {MakeProject} project */
     #scheduleReload(project) {
         clearTimeout(this.#reloadTimers.get(project));
         this.#reloadTimers.set(project, setTimeout(() => {
@@ -124,10 +148,13 @@ class MakeWorkspace {
         }, RELOAD_DELAY_MS));
     }
 
+    /** @param {string} key the workspace folder URI */
     #dropProject(key) {
         const project = this.#projects.get(key);
-        clearTimeout(this.#reloadTimers.get(project));
-        this.#reloadTimers.delete(project);
+        if (project !== undefined) {
+            clearTimeout(this.#reloadTimers.get(project));
+            this.#reloadTimers.delete(project);
+        }
         this.#folderWatchers.get(key)?.dispose();
         this.#folderWatchers.delete(key);
         for (const watcher of this.#fileWatchers.get(key) ?? []) {
@@ -158,4 +185,4 @@ class MakeWorkspace {
     }
 }
 
-module.exports = { MakeWorkspace };
+module.exports.MakeWorkspace = MakeWorkspace;

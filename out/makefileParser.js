@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const ASSIGNMENT = /^\s*(?:(?:override|export|private)\s+)*[A-Za-z_][A-Za-z0-9_.-]*\s*(?:\?|::|:|\+|!)?=/;
@@ -11,11 +12,26 @@ const TTY_FLAGS = /(?:^|\s)-(?:it|ti)(?=\s|$)/;
 const PATH_LIKE_NAME = /PATH|FILE|DIR|SRC/i;
 const NOT_PATH_VARIABLES = new Set(['PATH', 'SHELL', 'CURDIR', 'MAKEFILES', 'MAKEFILE_LIST']);
 
+/**
+ * @typedef {{ name: string, group: string | undefined, description: string, line: number, recipe: string[] }}
+ *     ParsedTarget
+ * @typedef {{ targets: ParsedTarget[], includes: string[] }} ParsedMakefile
+ * @typedef {{ name: string, targetCount: number }} PathVariableCandidate
+ */
+
+/**
+ * @param {string} line
+ * @returns {boolean}
+ */
 function endsWithContinuation(line) {
     const trailing = /\\+$/.exec(line);
     return trailing !== null && trailing[0].length % 2 === 1;
 }
 
+/**
+ * @param {string} text
+ * @returns {{ text: string, lineNumber: number }[]}
+ */
 function joinContinuations(text) {
     const physical = text.split(/\r?\n/);
     const logical = [];
@@ -31,6 +47,10 @@ function joinContinuations(text) {
     return logical;
 }
 
+/**
+ * @param {string} rest
+ * @returns {{ group: string | undefined, description: string }}
+ */
 function parseHelpComment(rest) {
     const index = rest.indexOf('##');
     if (index === -1) {
@@ -47,6 +67,9 @@ function parseHelpComment(rest) {
 /**
  * Text-level Makefile reader: targets with their help comments (`## text`, `##@Group text`) and recipes,
  * and the include directives. Conditionals are not evaluated; define…endef blocks are skipped.
+ *
+ * @param {string} text
+ * @returns {ParsedMakefile}
  */
 function parseMakefile(text) {
     const targets = new Map();
@@ -104,6 +127,10 @@ function parseMakefile(text) {
     return { targets: [...targets.values()], includes };
 }
 
+/**
+ * @param {string[]} recipe
+ * @returns {Set<string>}
+ */
 function referencedVariables(recipe) {
     const names = new Set();
     for (const line of recipe) {
@@ -114,11 +141,19 @@ function referencedVariables(recipe) {
     return names;
 }
 
+/**
+ * @param {string[]} recipe
+ * @returns {boolean}
+ */
 function needsTerminal(recipe) {
     const text = recipe.join('\n');
     return TTY_FLAGS.test(text) || (/--interactive\b/.test(text) && /--tty\b/.test(text));
 }
 
+/**
+ * @param {{ variables: Set<string> }[]} targets
+ * @returns {PathVariableCandidate[]}
+ */
 function pathVariableCandidates(targets) {
     const counts = new Map();
     for (const target of targets) {
@@ -132,4 +167,7 @@ function pathVariableCandidates(targets) {
         .sort((left, right) => right.targetCount - left.targetCount || left.name.localeCompare(right.name));
 }
 
-module.exports = { parseMakefile, referencedVariables, needsTerminal, pathVariableCandidates };
+module.exports.parseMakefile = parseMakefile;
+module.exports.referencedVariables = referencedVariables;
+module.exports.needsTerminal = needsTerminal;
+module.exports.pathVariableCandidates = pathVariableCandidates;

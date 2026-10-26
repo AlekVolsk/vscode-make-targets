@@ -2,6 +2,8 @@
 
 Make targets of the open folders in the Explorer, run in the background — as they are, or on the file or folder you right-click — with every run's output and history in a **Make** tab of the bottom panel.
 
+> This extension was created and is maintained with the help of AI tools.
+
 ## Installation
 
 ```bash
@@ -68,6 +70,10 @@ The file has a schema, so the editor completes and checks it. Changes apply as s
 - `makeTargets.plainTargetForeground` — other targets
 - `makeTargets.errorOutputForeground` — stderr lines in the Make panel
 
+## Changelog
+
+Release pages carry no detailed notes; what changed in each version is in [CHANGELOG.md](CHANGELOG.md).
+
 ## License
 
-MIT.
+BSD 3-Clause License.
